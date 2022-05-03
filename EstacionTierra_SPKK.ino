@@ -14,7 +14,7 @@ long frec=433E6; //Frecuencia actual
 int sf=7; //Spreading Factor 6-12
 long bw=250E3; // Bandwith 7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3, 41.7E3, 62.5E3, 125E3, 250E3, and 500E3
 int potenciometroPin = A2;    // Pin al que está conectado el potenciómetro
-int potenciometro = 0;  // Variable para almancenar la
+int potenciometro = 0;  // Variable para almancenar la frecuencia seleccionada, por defecto 433E6
 long frecuencias[] = {433E6, 433.075E6, 433.625E6, 434.200E6, 434.500E6, 434.775E6, 410E6, 420E6, 430E6, 525E6};// Lista de frecuencias
 
 
