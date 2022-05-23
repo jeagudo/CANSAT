@@ -17,7 +17,6 @@ Contacto: jeagudo@educarex.es
 #include "Adafruit_CCS811.h"
 
 
-
 void fnc_mics4514_preheat(int _prepin)
 {
   pinMode(_prepin, OUTPUT);
@@ -56,7 +55,7 @@ double fnc_mics4514(int _prepin, int _noxpin, int _redpin, int _result, double _
 /***********************************************Declaración Variables**************************************/
 Adafruit_CCS811 ccs;
 TinyGPS gps;
-SoftwareSerial softSerial(5, 4);
+SoftwareSerial softSerial(4, 5);
 ADXL345 adxl;
 SFE_BMP180 bmp180;
 int sf=7; //Spreading Factor 6-12
@@ -69,14 +68,17 @@ int potenciometroPin = A2;    // Pin al que está conectado el potenciómetro
 int potenciometro = 0;  // Variable para almancenar la frecuencia seleccionada, por defecto 433E6
 long frecuencias[] = {433E6, 433.075E6, 433.625E6, 434.200E6, 434.500E6, 434.775E6, 410E6, 420E6, 430E6, 525E6};// Lista de frecuencias
 int tiempoEnvio=2000; // Enviar mensaje cada 2 segundos
+bool led=true;
 /****************************************Configuración incial************************************************/
 void setup() {
 
   softSerial.begin(9600);
-  Serial.begin(9600);
+  Serial.begin(115200);
   while (!Serial);
  
   Serial.println("Sputnik-K CANSAT");
+  /*potenciometro = analogRead(potenciometroPin); // Leemos Frecuencia
+  frec=frecuencias[map(potenciometro, 0, 1020, 0, 9)];*/
   Serial.print("Frecuencia: ");
   Serial.println(frec);
 //Iniciamos LORA
@@ -155,15 +157,21 @@ if (!bmp180.begin())
   //Serial.begin(9600);
   //Serial.flush();
   //while(Serial.available()>0)Serial.read();
-  fnc_mics4514_preheat(2);
   
+  pinMode(6, OUTPUT);
+ 
+  digitalWrite(6, HIGH);
+  fnc_mics4514_preheat(2);
+
 }
 
 /*********************************************** Bucle principal****************************/
 void loop() {
   char status; // Para sensor bmp180
   double T,P,A;//Temperatura, presion atmosférica, altutud relativa
-  
+  if (led) digitalWrite(6, HIGH);
+  else digitalWrite(6, LOW);
+  led=!led;
   Serial.println("Enviando ");
 // 2 Segundos entre cada envío  
   delay(tiempoEnvio);
@@ -236,7 +244,7 @@ void loop() {
     //Serial.println(" g");
     //Serial.println("**********************");
     LoRa.print("X:");
-    LoRa.println(ax);
+    LoRa.println(String(ax));
     //Serial.println(" g");
     LoRa.print("Y:");
     LoRa.println(ay);
@@ -267,25 +275,32 @@ void loop() {
       gps.f_get_position(&flat, &flon, &age);
       Serial.print("LAT: ");
       Serial.println(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-      Serial.print(" LON: ");
+      Serial.print("LON: ");
       Serial.println(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
-      Serial.print(" ALT: ");
+      Serial.print("ALT: ");
       Serial.println(gps.f_altitude());
       LoRa.print("LAT: ");
       LoRa.println(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 6);
-      LoRa.print(" LON: ");
+      LoRa.print("LON: ");
       LoRa.println(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 6);
-      LoRa.print(" ALT: ");
+      LoRa.print("ALT: ");
       LoRa.println(gps.f_altitude());  
       /*Serial.print(" COUR=");
-      Serial.print(gps.f_course());
-      Serial.print(" SPEED=");
-      Serial.print(gps.f_speed_kmph());
-      Serial.print(" SAT=");
+      Serial.print(gps.f_course());*/
+      Serial.print("velocidad:");
+      Serial.println(gps.f_speed_kmph());
+      LoRa.print("velocidad:");
+      LoRa.println(gps.f_speed_kmph());
+      /*Serial.print(" SAT=");
       Serial.print(gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites());
       Serial.print(" PREC=");
       Serial.print(gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop());*/
    }
+   gps.stats(&chars, &sentences, &failed);
+   Serial.print("CHARS=");
+   Serial.println(chars);
+   LoRa.print("CHARS=");
+   LoRa.println(chars);
 //CCS811
   if(ccs.available()){
     if(!ccs.readData()){
@@ -321,9 +336,9 @@ void loop() {
   
   //Si hay cambio en el potenciometro cambiamos la frecuencia
   potenciometro = analogRead(potenciometroPin); // Leemos Frecuencia
-  if (frec!=frecuencias[map(potenciometro, 0, 1023, 0, 9)]){ 
+  /*if (frec!=frecuencias[map(potenciometro, 0, 1020, 0, 9)]){ 
     frec=frecuencias[map(potenciometro, 0, 1023, 0, 9)];// 10 frecuencias de 0 a 9
     LoRa.setFrequency(frec);
     Serial.print("Frecuencia ");
-    Serial.println(frec);}
+    Serial.println(frec);}*/
 }
